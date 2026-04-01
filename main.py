@@ -6,6 +6,12 @@
 # 3. Search the books
 # 4. Logout
 
+# ADDING FEATURES IN THE SYSTEM
+# 1. add a database to save the already registered users
+# 2. add a category in the book section
+# 3. add a adding to cart and removing in the cart
+# 
+
 # ADDING THE TITLE
 bookTitle = ["The Philippine Revolution", 
              "Noli Me Tangere", 
@@ -97,7 +103,7 @@ def book_menu(username):
                 print(f"Thank you for using the Library Management System, {username}!")
                 return False
             case _:
-                print("Invalid input. Please enter 1, 2, or 3")
+                print("Invalid input. Please enter between [1-3]")
 
 
 def main_menu():
