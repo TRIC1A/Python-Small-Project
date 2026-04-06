@@ -9,7 +9,7 @@
 # ADDING FEATURES IN THE SYSTEM
 # 1. add a database to save the already registered users
 # 2. add a category in the book section
-# 3. add a adding to cart and removing in the cart
+# 3. add a remove and add to cart in the book menu
 # 
 
 # ADDING THE TITLE
