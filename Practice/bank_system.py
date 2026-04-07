@@ -19,6 +19,19 @@
 # need to add the [] to store a value and save all the transaction history
 
 
+
+# transfer money
+# 1. enter the recipient account ID
+# 2. Authenticate sender(PIN, password)
+# 3. Enter transfer amount 
+# > sender must have enough balance
+# > amount is valid (within limits)
+# 4. confirm transaction details (show sender, recipient,amount, and update balance before finalizing)
+# 5. Execute transfer (update both accounts automatically, either both balances update or none to avoid inconsistencies)
+# 6. print success/failure message with transaction ID for tracking
+
+
+
 # INCOMING UPDATES OF THE SYSTEM!!!!
 # 1. add account name and account number ✔
 # 2. Add a multi user accounts
@@ -38,8 +51,10 @@
 
 
 accounts = [
-    {"name": "tricia", "number": 1111, "balance": 0, "transactions": []},
-    {"name": "gale", "number": 1122, "balance": 0, "transactions": []}
+    1111: {"name": "tricia", "balance": 0, "transactions": []},
+    1122: {"name": "gale", "balance": 0, "transactions": []},
+    2222: {"name": "kit", "balance": 0, "transactions": []},
+    2233: {"name": "kae", "balance": 0, "transactions": []},
 ]
 
 
@@ -60,7 +75,7 @@ def main_menu():
               
 # user login   
 def user_login():
-    print("\nLOGIN")
+    """ LOGIN """
     account_name = input("Account Name: ")
     account_number = int(input("Account Number: "))
     for acc in accounts:
@@ -98,6 +113,7 @@ def bank_menu(acc):
                 if withdraw > acc["balance"]:
                     print("Insuficient money.")
                     print(f"Your current balance: {acc["balance"]:.2f}")
+                # i dont think this line of code will appear in the terminal 
                 elif acc["balance"] < 500:
                     print(f"You cannot withdraw.\nYour balance is currently: {acc["balance"]:.2f}.\nYou need to withdraw atleast greater than 500 pesos.")
                 else:
@@ -106,13 +122,32 @@ def bank_menu(acc):
                     print(f"\nWithdraw: {withdraw}\nNew Balance: {acc["balance"]:.2f}")
             
             case 3:     # Transfer Money
-                print("\nComing Soon...")
-        
+                # print("\nComing Soon...")
+                recipient_id = int(input("Enter Recipient Account Number: "))               
+                if recipient_id in accounts:
+                    transfer_amount = int(input("Enter amount: "))
+                    if transfer_amount > acc["balance"]:
+                        print("Insuficient funds.")
+                    elif acc["balance"] - transfer_amount < 500:
+                        print("Cannot transfer, maintaining balance requirement not met.")
+                    else:
+                        choice = input("Confirm transfer? [Y/N]: ").upper()
+                        if choice == "Y":
+                            acc["balance"] -= transfer_amount
+                            accounts[recipient_id]["balance"] += transfer_amount
+                            acc["transactions"].append({"type": "transer_out", "amount": transfer_amount, "to": recipient_id})
+                            accounts[recipient_id]["transactions"].append({"type": "transer_in", "amount": transfer_amount, "from": acc["number"]})
+                            print(f"Transfer successful!\nNew Balance: {acc["balance"]:.2f}")
+                        else:
+                            print("Transfer cancelled.")
+                else:
+                    print("Recipient account not found.") 
+                            
             case 4:     # Show Balance
                 print(f"\nYour balance is: {acc["balance"]:.2f}")
                 
             case 5:     # Transaction History
-                print(f"\nTransaction History for {acc["name"]}")
+                print(f"\n--- Transaction History ---")
                 for tran in acc["transactions"]:
                     if tran["type"] == "deposit":
                         print(f"    + Deposit   : {tran['amount']:.2f}")
@@ -122,6 +157,7 @@ def bank_menu(acc):
                         print("There are no transaction yet.")
                     
             case 6:     # Logout
+                print("Logging out...")
                 print("Thank you for using our service!!!")
                 break
             
