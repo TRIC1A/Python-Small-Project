@@ -35,13 +35,15 @@
 # INCOMING UPDATES OF THE SYSTEM!!!!
 # 1. add account name and account number ✔
 # 2. Add a multi user accounts
-# 3. add transfer money
+# 3. add transfer money ✔
 # 4. add pin number in (login, witdrawal, transfer money, delete account)
 # 5. add delete account
 # 6. update account info
 #   > change name or PIN
 # 7. Save to File
 #   > Store data even after program closes
+# 8. Add a database into the system
+# 9. in the transaction add the DATE when the transaction begin
 
 
 # Use functions for better calling
@@ -50,12 +52,12 @@
 # import mysql.connector
 
 
-accounts = [
+accounts = {
     1111: {"name": "tricia", "balance": 0, "transactions": []},
     1122: {"name": "gale", "balance": 0, "transactions": []},
     2222: {"name": "kit", "balance": 0, "transactions": []},
-    2233: {"name": "kae", "balance": 0, "transactions": []},
-]
+    2233: {"name": "kae", "balance": 0, "transactions": []}
+}
 
 
 def main_menu():
@@ -76,21 +78,22 @@ def main_menu():
 # user login   
 def user_login():
     """ LOGIN """
-    account_name = input("Account Name: ")
+    account_name = input("\nAccount Name: ")
     account_number = int(input("Account Number: "))
-    for acc in accounts:
-        if acc["name"] == account_name and acc["number"] == account_number:
-            print("Login successful")
-            bank_menu(acc)
-            return
-    print("Wrong account name or account number")
+    if account_number in accounts and accounts[account_number]["name"] == account_name:
+        print("Login successful")
+        bank_menu(account_number)   # pass only the account number
+    else:
+        print("Wrong account name or account number")
             
     
 # bank menu of the user
-def bank_menu(acc):
+def bank_menu(sender_id):
+    acc = accounts[sender_id]   # get the account dictionary
+    
     while True:
         print(f"\n========== Welcome         User: {acc["name"]} ==========")
-        print("[1] Deposit")
+        print("[1] Deposit")   
         print("[2] Withdraw")
         print("[3] Transfer Money")
         print("[4] View Balance")
@@ -122,10 +125,12 @@ def bank_menu(acc):
                     print(f"\nWithdraw: {withdraw}\nNew Balance: {acc["balance"]:.2f}")
             
             case 3:     # Transfer Money
-                # print("\nComing Soon...")
-                recipient_id = int(input("Enter Recipient Account Number: "))               
+                """ Transfer Money """
+                recipient_id = int(input("Enter Recipient Account Number: "))   
+                            
                 if recipient_id in accounts:
                     transfer_amount = int(input("Enter amount: "))
+                    
                     if transfer_amount > acc["balance"]:
                         print("Insuficient funds.")
                     elif acc["balance"] - transfer_amount < 500:
@@ -135,8 +140,17 @@ def bank_menu(acc):
                         if choice == "Y":
                             acc["balance"] -= transfer_amount
                             accounts[recipient_id]["balance"] += transfer_amount
-                            acc["transactions"].append({"type": "transer_out", "amount": transfer_amount, "to": recipient_id})
-                            accounts[recipient_id]["transactions"].append({"type": "transer_in", "amount": transfer_amount, "from": acc["number"]})
+                            
+                            acc["transactions"].append({
+                                "type": "transfer_out", 
+                                "amount": transfer_amount, 
+                                "to": recipient_id
+                            })
+                            accounts[recipient_id]["transactions"].append({
+                                "type": "transfer_in", 
+                                "amount": transfer_amount, 
+                                "from": sender_id
+                            })
                             print(f"Transfer successful!\nNew Balance: {acc["balance"]:.2f}")
                         else:
                             print("Transfer cancelled.")
@@ -150,9 +164,15 @@ def bank_menu(acc):
                 print(f"\n--- Transaction History ---")
                 for tran in acc["transactions"]:
                     if tran["type"] == "deposit":
-                        print(f"    + Deposit   : {tran['amount']:.2f}")
+                        print(f"    + Deposit         : {tran['amount']:.2f}")
                     elif tran["type"] == "withdraw":
-                        print(f"    - Withdraw  : {tran['amount']:.2f}")
+                        print(f"    - Withdraw        : {tran['amount']:.2f}")
+                    elif tran["type"] == "transfer_out":       
+                        recipient_id = tran["to"]   # get the recipient account number from transaction
+                        print(f"    -> Transfer Out   : {tran['amount']:.2f} to {recipient_id} ({accounts[recipient_id]["name"]})")
+                    elif tran["type"] == "transfer_in":
+                        sender_id = tran["from"]    # get sender account number from transaction
+                        print(f"    <- Transfer In   : {tran['amount']:.2f} from {sender_id} ({accounts[sender_id]["name"]})")
                     else:
                         print("There are no transaction yet.")
                     
