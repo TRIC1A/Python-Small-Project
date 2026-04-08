@@ -50,6 +50,7 @@
 
 
 # import mysql.connector
+import random
 
 
 accounts = {
@@ -65,7 +66,11 @@ def main_menu():
     while True:
         print("\n[1] Login")
         print("[2] Exit")
-        choice = int(input("Choose: "))
+        try:
+            choice = int(input("Choose: "))
+        except ValueError:
+            print("Invalid input. Please enter a number.")
+            continue
         
         match(choice):
             case 1:
@@ -91,8 +96,13 @@ def user_login():
 def bank_menu(sender_id):
     acc = accounts[sender_id]   # get the account dictionary
     
+    # added timestamps when the transfer happened
+    from datetime import datetime
+    transaction_id = random.randint(100000, 999999)
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    
     while True:
-        print(f"\n========== Welcome         User: {acc["name"]} ==========")
+        print(f"\n========== Welcome User: {acc["name"]} ==========")
         print("[1] Deposit")   
         print("[2] Withdraw")
         print("[3] Transfer Money")
@@ -104,77 +114,109 @@ def bank_menu(sender_id):
         match(choice):
             case 1:     # Deposit
                 amount = int(input("\nEnter amount: "))
-                if amount >= 100000:
+                if amount <= 0:
+                    print("Invalid amount.")
+                elif amount > 100000:
                     print("You exceed the limit to deposit: ")
                 else:
-                    acc["balance"] += amount
-                    acc["transactions"].append({"type": "deposit", "amount": amount})
-                    print(f"\nDeposited: {amount}\nNew Balance: {acc["balance"]:.2f}")
+                    acc['balance'] += amount
+                    acc["transactions"].append({
+                        "id": transaction_id,
+                        "type": "deposit", 
+                        "amount": amount,
+                        "time": timestamp
+                    })
+                    print(f"\nDeposited: {amount}\nNew Balance: {acc['balance']:.2f}")
                     
             case 2:     # Withdraw
                 withdraw = int(input("\nEnter amount: "))
-                if withdraw > acc["balance"]:
+                if withdraw > acc['balance']:
                     print("Insuficient money.")
-                    print(f"Your current balance: {acc["balance"]:.2f}")
+                    print(f"Your current balance: {acc['balance']:.2f}")
                 # i dont think this line of code will appear in the terminal 
-                elif acc["balance"] < 500:
-                    print(f"You cannot withdraw.\nYour balance is currently: {acc["balance"]:.2f}.\nYou need to withdraw atleast greater than 500 pesos.")
+                elif acc['balance'] - withdraw < 500:
+                    print(f"You must maintain at least 500 balance.")
                 else:
-                    acc["balance"] -= withdraw
-                    acc["transactions"].append({"type": "withdraw", "amount": withdraw})
-                    print(f"\nWithdraw: {withdraw}\nNew Balance: {acc["balance"]:.2f}")
+                    acc['balance'] -= withdraw
+                    acc["transactions"].append({
+                        "id": transaction_id,
+                        "type": "withdraw", 
+                        "amount": withdraw,
+                        "time": timestamp
+                    })
+                    print(f"\nWithdraw: {withdraw}\nNew Balance: {acc['balance']:.2f}")
             
             case 3:     # Transfer Money
                 """ Transfer Money """
                 recipient_id = int(input("Enter Recipient Account Number: "))   
+                
+                if recipient_id == sender_id:
+                    print("You cannot transfer to your own account.")
                             
                 if recipient_id in accounts:
                     transfer_amount = int(input("Enter amount: "))
                     
-                    if transfer_amount > acc["balance"]:
+                    if transfer_amount > acc['balance']:
                         print("Insuficient funds.")
-                    elif acc["balance"] - transfer_amount < 500:
+                    elif acc['balance'] - transfer_amount < 500:
                         print("Cannot transfer, maintaining balance requirement not met.")
                     else:
                         choice = input("Confirm transfer? [Y/N]: ").upper()
                         if choice == "Y":
-                            acc["balance"] -= transfer_amount
-                            accounts[recipient_id]["balance"] += transfer_amount
+                            acc['balance'] -= transfer_amount
+                            accounts[recipient_id]['balance'] += transfer_amount
                             
                             acc["transactions"].append({
+                                "id": transaction_id,
                                 "type": "transfer_out", 
                                 "amount": transfer_amount, 
-                                "to": recipient_id
+                                "to": recipient_id,
+                                "time": timestamp
                             })
                             accounts[recipient_id]["transactions"].append({
+                                "id": transaction_id,
                                 "type": "transfer_in", 
                                 "amount": transfer_amount, 
-                                "from": sender_id
+                                "from": sender_id,
+                                "time": timestamp
                             })
-                            print(f"Transfer successful!\nNew Balance: {acc["balance"]:.2f}")
+                            print(f"Transfer successful!\nNew Balance: {acc['balance']:.2f}")
                         else:
                             print("Transfer cancelled.")
                 else:
                     print("Recipient account not found.") 
                             
             case 4:     # Show Balance
-                print(f"\nYour balance is: {acc["balance"]:.2f}")
+                print(f"\nYour balance is: {acc['balance']:.2f}")
                 
             case 5:     # Transaction History
-                print(f"\n--- Transaction History ---")
-                for tran in acc["transactions"]:
-                    if tran["type"] == "deposit":
-                        print(f"    + Deposit         : {tran['amount']:.2f}")
-                    elif tran["type"] == "withdraw":
-                        print(f"    - Withdraw        : {tran['amount']:.2f}")
-                    elif tran["type"] == "transfer_out":       
-                        recipient_id = tran["to"]   # get the recipient account number from transaction
-                        print(f"    -> Transfer Out   : {tran['amount']:.2f} to {recipient_id} ({accounts[recipient_id]["name"]})")
-                    elif tran["type"] == "transfer_in":
-                        sender_id = tran["from"]    # get sender account number from transaction
-                        print(f"    <- Transfer In   : {tran['amount']:.2f} from {sender_id} ({accounts[sender_id]["name"]})")
-                    else:
-                        print("There are no transaction yet.")
+                print("\n========== TRANSACTION HISTORY ==========")
+                
+                if not acc["transactions"]:
+                    print(("No transaction yet."))
+                else:
+                    print(f"{'ID':<8}{'TYPE':<16}{'DETAILS':<30}{'AMOUNT':<12}{'DATE'}")
+                    print("-" * 75)
+                    
+                    for tran in acc["transactions"]:
+                        if tran["type"] == "deposit":
+                            # print(f"    + Deposit         : {tran['amount']:.2f}")
+                            print(f"[ID:{tran['id']}] + Deposit : {tran['amount']:.2f} | {tran['time']}")
+                        elif tran["type"] == "withdraw":
+                            # print(f"    - Withdraw        : {tran['amount']:.2f}")
+                            print(f"[ID:{tran['id']}] - Withdraw : {tran['amount']:.2f} | {tran['time']}")
+                        elif tran["type"] == "transfer_out":       
+                            recipient_id = tran["to"]   # account number stored in transaction                  
+                            timestamp = tran["time"]    # fetch the time from transaction
+                            # print(f"    -> Transfer Out   : {tran['amount']:.2f} to {recipient_id} ({accounts[recipient_id]['name']})\tDate: {timestamp}")
+                            print(f"[ID:{tran['id']}] -> Transfer Out : {tran['amount']:.2f} to {recipient_id} ({accounts[recipient_id]['name']}) | {timestamp}")
+                        elif tran["type"] == "transfer_in":
+                            sender_id = tran["from"]    # account number stored in transaction
+                            timestamp = tran["time"]    # fetch the time from transaction
+                            # print(f"    <- Transfer In   : {tran['amount']:.2f} from {sender_id} ({accounts[sender_id]['name']})\tDate: {timestamp}")
+                            print(f"[ID:{tran['id']}] <- Transfer In : {tran['amount']:.2f} from {sender_id} ({accounts[sender_id]['name']}) | {timestamp}")
+                        
+                    
                     
             case 6:     # Logout
                 print("Logging out...")
