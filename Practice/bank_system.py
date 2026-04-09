@@ -52,6 +52,8 @@
 # import mysql.connector
 import random
 from datetime import datetime
+import json
+
 
 
 accounts = {
@@ -61,6 +63,20 @@ accounts = {
     2233: {"name": "kae", "pin": "8765", "balance": 0, "transactions": []}
 }
 
+def save_data():
+    with open("accounts.json", "w") as file:
+        json.dump(accounts, file, indent=4)
+        
+
+def load_data():
+    global accounts
+    try:
+        with open("accounts.json", "r") as file:
+            accounts = json.load(file)  
+            
+            accounts = {int(k): v for k, v in accounts.items()}
+    except FileNotFoundError:
+        print("No saved data found. Using default accounts.")
 
 def main_menu():
     """MAIN MENU"""
@@ -100,6 +116,7 @@ def user_login():
 def get_current_time():
     return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
+
 def authenticate(account_id):
     entered_id = input("Enter PIN: ")
     return accounts[account_id]["pin"] == entered_id
@@ -136,6 +153,7 @@ def bank_menu(sender_id):
                     print("You exceed the limit to deposit: ")
                 else:
                     acc['balance'] += amount
+                    save_data()
                     
                     # added timestamps when the transfer happened
                     transaction_id = random.randint(100000, 999999)
@@ -172,7 +190,7 @@ def bank_menu(sender_id):
                     
                     # added timestamps when the transfer happened
                     transaction_id = random.randint(100000, 999999)
-                    timestamp = get_current_time()
+                    timestamp = get_current_time()          # added timestamps when the transfer happened
                     
                     acc["transactions"].append({
                         "id": transaction_id,
@@ -217,6 +235,7 @@ def bank_menu(sender_id):
                             
                             acc['balance'] -= transfer_amount
                             accounts[recipient_id]['balance'] += transfer_amount
+                            save_data()
                             
                             acc["transactions"].append({
                                 "id": transaction_id,
@@ -292,5 +311,6 @@ def bank_menu(sender_id):
 
 
 if __name__ == "__main__":
+    load_data()
     main_menu()
                 

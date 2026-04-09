@@ -1,0 +1,39 @@
+{
+    "1111": {
+        "name": "tricia",
+        "pin": "1234",
+        "balance": 24300,
+        "transactions": [
+            {
+                "id": 597787,
+                "type": "deposit",
+                "amount": 30000,
+                "time": "2026-04-08 23:33:48"
+            },
+            {
+                "id": 889171,
+                "type": "withdraw",
+                "amount": 500,
+                "time": "2026-04-08 23:36:18"
+            }
+        ]
+    },
+    "1122": {
+        "name": "gale",
+        "pin": "5678",
+        "balance": 0,
+        "transactions": []
+    },
+    "2222": {
+        "name": "kit",
+        "pin": "4321",
+        "balance": 1700,
+        "transactions": []
+    },
+    "2233": {
+        "name": "kae",
+        "pin": "8765",
+        "balance": 3500,
+        "transactions": []
+    }
+}
