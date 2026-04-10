@@ -1,9 +1,11 @@
-# Bank System
+# Bank System (No name yet for the system)
 # 1. Deposit
 # 2. Withdraw
-# 3. Show balance
+# 3. Transfer Money
+# 4. View Balance
+# 5. Transaction History
 
-# flow
+# flow in the bank_menu
 # 1. ask the user a choice
 # 2. in deposit 
 #   > ask user how much money need to deposit(limit: 100000)
@@ -34,16 +36,19 @@
 
 # INCOMING UPDATES OF THE SYSTEM!!!!
 # 1. add account name and account number ✔
-# 2. Add a multi user accounts
+# 2. Add a multi user accounts ✔
 # 3. add transfer money ✔
-# 4. add pin number in (login, witdrawal, transfer money, delete account)
-# 5. add delete account
+# 4. add pin number in (login, witdrawal, transfer money, delete account) ✔
+# 5. create, search, view, update and delete account(admin only)
 # 6. update account info
 #   > change name or PIN
-# 7. Save to File
+# 7. Save to File   ✔
 #   > Store data even after program closes
 # 8. Add a database into the system
-# 9. in the transaction add the DATE when the transaction begin
+# 9. in the transaction add the DATE when the transaction begin ✔
+# 10. user and admin can update or edit the pin and name 
+#   > user should have a certain restriction in terms of changing or updating user information should verify first the (PIN, name)
+#   > admin can change user PIN without verifying the old PIN
 
 
 # Use functions for better calling
@@ -63,6 +68,8 @@ accounts = {
     2233: {"name": "kae", "pin": "8765", "balance": 0, "transactions": []}
 }
 
+admin_password = "admin123"
+
 def save_data():
     with open("accounts.json", "w") as file:
         json.dump(accounts, file, indent=4)
@@ -78,13 +85,20 @@ def load_data():
     except FileNotFoundError:
         print("No saved data found. Using default accounts.")
 
+# Main Menu
 def main_menu():
     """MAIN MENU"""
     while True:
         print("\n[1] Login")
         print("[2] Exit")
+        
+        choice = input("Choose: ")      # make it string first to pass in the admin login
+        
+        if choice.lower() == "admin":
+            admin_login()
+            continue
         try:
-            choice = int(input("Choose: "))
+            choice = int(choice)    # updated it to integer to continue to access the user login/exit
         except ValueError:
             print("Invalid input. Please enter a number.")
             continue
@@ -96,6 +110,8 @@ def main_menu():
                 print("Exiting the system...")
                 print("Thank you for using our system!!!")                
                 break
+            
+        
               
 # user login   
 def user_login():
@@ -110,8 +126,84 @@ def user_login():
             print("Wrong PIN. Access denied.")
     else:
         print("Wrong account name or account number")
-            
+    
+def admin_login():
+    
+    # admin_password = "admin123"
+    password = input("Enter admin password: ")
+    if password == admin_password:
+        print("You can acceses now the admin menu.")
+        admin_menu()
+    else:
+        print("Access denied.")
+        return
+        
 
+# SECRET ACCESS FOR ADMIN
+def admin_menu():
+    
+    print("\n========== Admin Menu ==========")
+        
+    while True:
+        print("\n[1] Create Account")
+        print("[2] Read/View Accounts")
+        print("[3] Update Account")
+        print("[4] Search Account")
+        print("[5] Delete Account")
+        print("[6] View Admin Logs")
+        print("[7] Back")
+        try:    
+                choice = int(input("Choose: "))     
+        except ValueError:
+            print("Invalid input. Please enter a number.")
+            continue
+        
+        match(choice):
+            case 1:     # Create Account
+                account_name = input("Enter Account Name: ")
+                account_number = int(input("Enter Account Number: "))
+                pin = input("Enter PIN: ")  
+                
+                # check if the account already exists
+                if account_number in accounts:
+                    print("Acount Number already exists.")
+                else:
+                    accounts[account_number] = {
+                        "name": account_name,
+                        "pin": pin,
+                        "balance": 0,
+                        "transactions": []
+                    }
+                    save_data()
+                    print("Account successfully created.")
+            
+            case 3:     # Update Account
+                update_account = int(input("Enter Account Number to update: "))
+                if update_account in accounts:
+                    print("[1] Change Name")
+                    print("[2] Change PIN")
+                    print("[3] Change Account Status")  
+            
+            case 5:     # Delete Account
+                remove_account = int(input("Enter Account Number to delete: "))
+                if remove_account in accounts:
+                    del accounts[account_number]
+                    save_data()
+                    print(f"\nAccount {remove_account} deleted successfully.")
+                else:
+                    print("Incorrect account number.")
+                    
+                    exit = input("Do you want to try again? [Y/N]: ").upper()
+                    
+                    if exit == 'N':
+                        return
+                    else:
+                        continue                
+                
+            case 7:
+                return
+                
+                
 #  get the current time
 def get_current_time():
     return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -121,6 +213,7 @@ def authenticate(account_id):
     entered_id = input("Enter PIN: ")
     return accounts[account_id]["pin"] == entered_id
     
+
 # bank menu of the user
 def bank_menu(sender_id):
     acc = accounts[sender_id]   # get the account dictionary
@@ -295,20 +388,13 @@ def bank_menu(sender_id):
                             sign = "+"
                         
                         print(f"{t_id:<10}{t_type.upper():<20}{details:<30}{sign}{amount:<15.2f}{time}")
-                            
-                            
-                        
-                    
-                    
+                                   
             case 6:     # Logout
                 print("Logging out...")
                 print("Thank you for using our service!!!")
                 break
             
             
-            
-            
-
 
 if __name__ == "__main__":
     load_data()
