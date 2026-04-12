@@ -2,7 +2,7 @@
     "1111": {
         "name": "tricia",
         "pin": "1234",
-        "balance": 24300,
+        "balance": 23000,
         "transactions": [
             {
                 "id": 597787,
@@ -15,6 +15,19 @@
                 "type": "withdraw",
                 "amount": 500,
                 "time": "2026-04-08 23:36:18"
+            },
+            {
+                "id": 640671,
+                "type": "withdraw",
+                "amount": 1000,
+                "time": "2026-04-11 14:46:46"
+            },
+            {
+                "id": 538137,
+                "type": "transfer_out",
+                "amount": 300,
+                "to": 2222,
+                "time": "2026-04-11 14:47:22"
             }
         ]
     },
@@ -27,8 +40,16 @@
     "2222": {
         "name": "kit",
         "pin": "4321",
-        "balance": 1700,
-        "transactions": []
+        "balance": 500,
+        "transactions": [
+            {
+                "id": 538137,
+                "type": "transfer_in",
+                "amount": 300,
+                "from": 1111,
+                "time": "2026-04-11 14:47:22"
+            }
+        ]
     },
     "2233": {
         "name": "kae",

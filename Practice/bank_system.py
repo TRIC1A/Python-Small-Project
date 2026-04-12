@@ -51,6 +51,20 @@
 #   > admin can change user PIN without verifying the old PIN
 
 
+# FUTURE IMPROVEMENTS
+# 1. ADMIN SYSTEM UPGRADES
+#   > Admin security upgrade (limit the wrong password attempts[3 tries lock])
+# 2. USER ACCOUNT UPGRADES
+#   > change name 
+#   > change PIN(with old PIN verification)
+# 2. ACCOUNT SECURITY
+#   > Lock account after 3 wrong PIN attempts
+#   > Unlock via admin only
+
+
+
+
+
 # Use functions for better calling
 
 
@@ -62,10 +76,10 @@ import json
 
 
 accounts = {
-    1111: {"name": "tricia", "pin": "1234", "balance": 0, "transactions": []},
-    1122: {"name": "gale", "pin": "5678", "balance": 0, "transactions": []},
-    2222: {"name": "kit", "pin": "4321", "balance": 0, "transactions": []},
-    2233: {"name": "kae", "pin": "8765", "balance": 0, "transactions": []}
+    1111: {"name": "tricia", "pin": "1234", "balance": 0, "transactions": [], "status": "active", "locked": False},
+    1122: {"name": "gale", "pin": "5678", "balance": 0, "transactions": [], "status": "active", "locked": False},
+    2222: {"name": "kit", "pin": "4321", "balance": 0, "transactions": [], "status": "active", "locked": False},
+    2233: {"name": "kae", "pin": "8765", "balance": 0, "transactions": [], "status": "active", "locked": False}
 }
 
 admin_password = "admin123"
@@ -110,22 +124,53 @@ def main_menu():
                 print("Exiting the system...")
                 print("Thank you for using our system!!!")                
                 break
-            
-        
+                   
               
 # user login   
 def user_login():
     """ LOGIN """
-    account_name = input("\nAccount Name: ")
-    account_number = int(input("Account Number: "))
-    if account_number in accounts and accounts[account_number]["name"] == account_name:
-        if authenticate(account_number):
-            print("Login successful")
-            bank_menu(account_number)   # pass only the account number
+    attempt = 0
+    valid_account = None        # track only correct account
+    
+    while attempt < 3:
+        account_name = input("\nAccount Name: ")
+        
+        try:
+            account_number = int(input("Account Number: "))
+        except ValueError:
+            print("Invalid account number.")
+            attempt += 1
+            continue
+        
+        if account_number in accounts and accounts[account_number]["name"].lower() == account_name:
+            
+            # check if account is locked
+            if accounts[account_number].get("locked"):
+                print("Account is locked. Contact admin.")
+                return
+                
+            valid_account = account_number
+            
+            if authenticate(account_number):
+                print("Login successfull.")
+                bank_menu(account_number)
+                return
+            else:
+                print(f"Wrong PIN. Attempts left: {2 - attempt}")
+                attempt += 1
         else:
-            print("Wrong PIN. Access denied.")
-    else:
-        print("Wrong account name or account number")
+            print("Wrong account name or account number.")
+            attempt += 1
+    
+    if valid_account is not None:
+        accounts[valid_account]["locked"] = True
+        save_data()
+        print("Too many failed attempts. Account is now locked.")
+    
+    print("Returning to main menu.")
+    
+
+            
     
 def admin_login():
     
@@ -178,16 +223,52 @@ def admin_menu():
                     print("Account successfully created.")
             
             case 3:     # Update Account
-                update_account = int(input("Enter Account Number to update: "))
+                update_account = int(input("Enter Account Number to update: "))     # new account number 
                 if update_account in accounts:
                     print("[1] Change Name")
                     print("[2] Change PIN")
-                    print("[3] Change Account Status")  
+                    # print("[3] Change Account Status")  
+                    try:    
+                            choice = int(input("Choose: "))     
+                    except ValueError:
+                        print("Invalid input. Please enter a number.")
+                        continue
+                    
+                    if choice == 1:
+                            new_account_name = input("Enter New Account Name: ")
+                            
+                            if not new_account_name.strip():
+                                print("Name cannot be empty.")
+                                continue
+                            
+                            accounts[update_account]['name'] = new_account_name
+                            save_data()
+                            print(f"Account {update_account} name updated successfully.")
+                            
+                    elif choice == 2:
+                        new_pin = input("Enter new PIN: ")
+                        
+                        if not new_pin.isdigit() or len(new_pin) != 4:
+                            print("PIN must be exactly 4 digits.")
+                            continue
+                        
+                        confirm = input("Are you sure? [Y/N]: ")
+                        
+                        if confirm != 'Y':
+                            print("PIN cancelled.")
+                            continue
+                        
+                        accounts[update_account]["pin"] = new_pin
+                        save_data()
+    
+                else:
+                    print("Account not found.")
+                    
             
             case 5:     # Delete Account
                 remove_account = int(input("Enter Account Number to delete: "))
                 if remove_account in accounts:
-                    del accounts[account_number]
+                    del accounts[remove_account]
                     save_data()
                     print(f"\nAccount {remove_account} deleted successfully.")
                 else:
@@ -280,6 +361,7 @@ def bank_menu(sender_id):
                     print(f"You must maintain at least 500 balance.")
                 else:
                     acc['balance'] -= withdraw
+                    save_data()
                     
                     # added timestamps when the transfer happened
                     transaction_id = random.randint(100000, 999999)
