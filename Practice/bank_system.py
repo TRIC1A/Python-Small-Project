@@ -206,7 +206,13 @@ def admin_menu():
         match(choice):
             case 1:     # Create Account
                 account_name = input("Enter Account Name: ")
-                account_number = int(input("Enter Account Number: "))
+                
+                try:
+                    account_number = int(input("Enter Account Number: "))
+                except ValueError:
+                    print("Invalid account number.")
+                    continue
+                
                 pin = input("Enter PIN: ")  
                 
                 # check if the account already exists
@@ -217,10 +223,76 @@ def admin_menu():
                         "name": account_name,
                         "pin": pin,
                         "balance": 0,
-                        "transactions": []
+                        "transactions": [],
+                        "status": "active",
+                        "locked": False
                     }
                     save_data()
                     print("Account successfully created.")
+            
+            case 2:      # Read/View Accounts
+                
+                while True:
+                    
+                    print("========== READ/VIEW ACCOUNTS ==========")
+                    print("[1] View All Accounts")
+                    print("[2] View Single Accounts")
+                    print("[3] Back")
+                    
+                    try:
+                        choice = int(input("Choose: "))
+                    except ValueError:
+                        print("Invalid input. Please enter a number.")
+                        continue
+                    
+                    match(choice):
+                        case 1:     # View All Accounts
+                            
+                            if not accounts:
+                                print("No accounts found.")
+                            else:
+                                print("-" * 60)
+                                print(f"{'ACC NO.':<10}{'NAME':<15}{'BALANCE':<15}{'STATUS':<10}{'LOCKED'}")                            
+                                print("-" * 60)
+                                
+                                for acc_num, acc in accounts.items():
+                                    print(f"{acc_num:<10} {acc['name']:<15} {acc['balance']:<15.2f} {acc.get('status', 'N/A'):<10} {acc.get('locked', False)}")
+                        
+                        case 2:     # View Single Account
+                    
+                            while True:
+                                try:
+                                    view_account_number = int(input("Enter Account Number to view (0 to cancel): "))
+                                except ValueError:
+                                    print("Invalid input. Please enter a number.")
+                                    continue
+                                
+                                if view_account_number == 0:
+                                    break
+                                    
+                                if view_account_number in accounts:
+                                    acc = accounts[view_account_number]
+                                    
+                                    print("\n========== ACCOUNT DETAILS ==========")
+                                    print(f"Account Number: {view_account_number}")
+                                    print(f"Account Name: {acc['name']}")
+                                    print(f"Balance: {acc['balance']}")
+                                    print(f"Status: {acc.get('status', 'N/A')}")
+                                    print(f"Locked: {acc.get('locked', False)}")
+                                    
+                                    choice_exit = input("Do you want to exit? [Y/N]: ").upper()
+                                    if choice_exit == 'N':
+                                        continue
+                                    else:
+                                        break
+                                    
+                                else:
+                                    print("Account not found.")
+                        
+                        case 3:
+                            print("Returning back to main menu.")
+                            break    
+                        
             
             case 3:     # Update Account
                 update_account = int(input("Enter Account Number to update: "))     # new account number 
@@ -241,7 +313,12 @@ def admin_menu():
                                 print("Name cannot be empty.")
                                 continue
                             
-                            accounts[update_account]['name'] = new_account_name
+                            confirm = input("Are you sure? [Y/N]: ").upper()
+                            if confirm != 'Y':
+                                print("Update cancelled.")
+                                continue
+                            
+                            accounts[update_account]['name'] = new_account_name.strip().title()
                             save_data()
                             print(f"Account {update_account} name updated successfully.")
                             
@@ -252,7 +329,7 @@ def admin_menu():
                             print("PIN must be exactly 4 digits.")
                             continue
                         
-                        confirm = input("Are you sure? [Y/N]: ")
+                        confirm = input("Are you sure? [Y/N]: ").upper()
                         
                         if confirm != 'Y':
                             print("PIN cancelled.")
@@ -260,12 +337,31 @@ def admin_menu():
                         
                         accounts[update_account]["pin"] = new_pin
                         save_data()
+                        print(f"Account {update_account} PIN updated successfully.")
     
                 else:
                     print("Account not found.")
                     
+            case 4:     # Search Account
+                
+                name = input("Enter name to search: ").lower()
+                
+                count = 0
+                found = False
+                for acc_num, acc in accounts.items():
+                    if name in acc["name"].lower():
+                        print(f"Account Number: {acc_num}\nAccount Name: {acc['name']}\nBalance: {acc['balance']:.2f}")
+                        count += 1
+                        found = True
+                    
+                if not found:
+                    print("No matching accounts found.")
+                else:
+                    print(f"\nTotal matches found: {count}")
+                    
             
             case 5:     # Delete Account
+                
                 remove_account = int(input("Enter Account Number to delete: "))
                 if remove_account in accounts:
                     del accounts[remove_account]
@@ -274,9 +370,9 @@ def admin_menu():
                 else:
                     print("Incorrect account number.")
                     
-                    exit = input("Do you want to try again? [Y/N]: ").upper()
+                    choice_exit = input("Do you want to try again? [Y/N]: ").upper()
                     
-                    if exit == 'N':
+                    if choice_exit == 'N':
                         return
                     else:
                         continue                
@@ -290,9 +386,23 @@ def get_current_time():
     return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
 
-def authenticate(account_id):
-    entered_id = input("Enter PIN: ")
-    return accounts[account_id]["pin"] == entered_id
+def authenticate(account_id): 
+    attempt = 0
+    
+    while attempt < 3:
+        entered_id = input("Enter PIN: ")
+
+        if accounts[account_id]["pin"] == entered_id:
+            return True
+        else:
+            attempt += 1
+            print(f"Wrong PIN. Attempts left: {3 - attempt}")
+        
+    accounts[account_id]["locked"] = True
+    save_data()
+    print("Account locked due to too many failed attempts.")
+    
+    return False
     
 
 # bank menu of the user
@@ -339,7 +449,7 @@ def bank_menu(sender_id):
                         "amount": amount,
                         "time": timestamp
                     })
-                    print(f"\nDeposited: {amount}\nNew Balance: {acc['balance']:.2f}")
+                    print(f"\nDeposited: {amount:.2f}\nNew Balance: {acc['balance']:.2f}")
                     
             case 2:     # Withdraw
                 
@@ -358,7 +468,7 @@ def bank_menu(sender_id):
                     print(f"Your current balance: {acc['balance']:.2f}")
                 # i dont think this line of code will appear in the terminal 
                 elif acc['balance'] - withdraw < 500:
-                    print(f"You must maintain at least 500 balance.")
+                    print(f"You must maintain at least 500 balance.\nCurrent balance: {acc['balance']:.2f}")
                 else:
                     acc['balance'] -= withdraw
                     save_data()
@@ -393,7 +503,12 @@ def bank_menu(sender_id):
                     continue
                             
                 if recipient_id in accounts:
-                    transfer_amount = int(input("Enter amount: "))
+                    
+                    try:
+                        transfer_amount = int(input("Enter amount: "))
+                    except ValueError:
+                        print("Invalid amount.")
+                        continue
                     
                     if transfer_amount > acc['balance']:
                         print("Insuficient funds.")
